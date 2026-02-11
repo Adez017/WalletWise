@@ -26,8 +26,9 @@ Welcome! Thanks for your interest in improving **WalletWise** — every bug fix,
 ```bash
 git clone https://github.com/SoumyaMishra-7/WalletWise.git
 cd WalletWise
+cd frontend
 npm install
-npm run dev
+npm start
 ```
 
 ---
