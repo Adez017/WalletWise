@@ -202,7 +202,6 @@
   transition: all 0.2s ease;
 }
 
-/* Specific Dark Mode Overrides */
 body.theme-dark .form-group input,
 body.theme-dark .form-group select {
   background-color: var(--bg-card);
@@ -219,7 +218,7 @@ body.theme-dark .form-group select {
   color: var(--text-main);
 }
 
-/* Autofill Fix for Dark Mode */
+
 .form-group input:-webkit-autofill,
 .form-group input:-webkit-autofill:hover,
 .form-group input:-webkit-autofill:focus,
