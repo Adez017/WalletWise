@@ -84,34 +84,8 @@ const Transactions = () => {
           params.startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
           params.endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
         } else {
-          // Backend support needed for multi-category filter if we want perfect match
-          // For now, mapping simplified filters or we can handle specific logic
-          // Ideally backend takes 'category' param.
-          // But quickFilters here use multiple categories. 
-          // Let's rely on backend 'search' or just send the ID if backend handled it.
-          // Updating backend to handle 'type' meant 'expense/income' usually.
-          // Let's assume for now we might filter client side OR improved backend.
-          // *Correction based on plan*: Plan said server side.
-          // Since backend 'type' filter is for income/expense, and 'category' is string match.
-          // We will implement basic search for now for these specific categories or 
-          // pass a specific 'category' param if backend supported it. 
-          // The backend handles 'search' regex on category. 
-          // So we'll pass the first category of the group as search or the filter ID if it maps well.
 
-          // Strategy: Use client side filtering or update backend details?
-          // The prompt asked for "clear pagination controls".
-          // We implemented backend pagination.
-          // If we mix backend pagination with client side filtering, the pages will be wrong.
-          // So we MUST pass filters to backend.
-
-          // Mapping quick filters to backend params:
-          // 'food' -> search='food' (works because 'food' is in grocery/dining/food)
-          // 'transport' -> search='transport'
-          // 'fun' -> search='fun'
-
-          // Let's just use the label or id as search term for simplicity if it overlaps, 
-          // or add specific logic.
-          if (activeQuickFilter === 'food') params.search = 'food'; // distinct enough? might match 'cat food'.
+          if (activeQuickFilter === 'food') params.search = 'food'; 
           if (activeQuickFilter === 'transport') params.search = 'transport';
           if (activeQuickFilter === 'fun') params.search = 'fun';
         }
@@ -128,7 +102,6 @@ const Transactions = () => {
         setTransactions(response.data.transactions || []);
         if (response.data.pagination) {
           setTotalPages(response.data.pagination.pages);
-          // Optional: Update currentPage if out of bounds (handled by backend usually returns empty)
         }
       } else {
         setError('Failed to load transactions.');
@@ -140,7 +113,7 @@ const Transactions = () => {
       } else {
         setError('Could not connect to server.');
       }
-      setTransactions([]); // Clear on error
+      setTransactions([]); 
     } finally {
       setLoading(false);
     }
@@ -150,7 +123,6 @@ const Transactions = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, activeQuickFilter, sortMode, startDate, endDate]);
@@ -166,10 +138,7 @@ const Transactions = () => {
       year: 'numeric'
     });
 
-  // Client-side export (fetches all for export? Or just exports current view?)
-  // Ideally export should trigger a backend download. 
-  // For now, we'll export current page to avoid complexity of fetching all.
-  const buildExportRows = () => {
+
     return transactions.map((tx) => ({
       date: formatDate(tx.date),
       category: tx.category || 'others',
