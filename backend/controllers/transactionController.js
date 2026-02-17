@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transactions');
 const User = require('../models/User');
+const { isValidObjectId } = require('../utils/validation');
 
 // Add Transaction
 const addTransaction = async (req, res) => {
@@ -128,6 +129,10 @@ const updateTransaction = async (req, res) => {
         const userId = req.userId;
         const { type, amount, category, description, paymentMethod, mood, date } = req.body;
 
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid transaction ID format' });
+        }
+
         const oldTransaction = await Transaction.findOne({ _id: id, userId });
         if (!oldTransaction) {
             return res.status(404).json({ success: false, message: 'Transaction not found' });
@@ -196,6 +201,10 @@ const deleteTransaction = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId;
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid transaction ID format' });
+        }
 
         const transaction = await Transaction.findOneAndDelete({ _id: id, userId });
 
