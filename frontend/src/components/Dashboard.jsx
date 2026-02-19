@@ -14,7 +14,7 @@ import {
   FaHandHoldingUsd, FaBullseye, FaChartBar, FaExclamationTriangle,
   FaBrain, FaArrowUp, FaCalendarAlt,
   FaSync, FaHome, FaExchangeAlt,
-  FaCog, FaChartPie, FaEdit, FaTrash, FaCalendarCheck, FaBell, FaSun, FaMoon
+  FaCog, FaChartPie, FaEdit, FaTrash, FaCalendarCheck, FaBell, FaSun, FaMoon, FaMagic
 } from 'react-icons/fa';
 import { useTheme } from '../context/ThemeContext';
 import { Line, Pie } from 'react-chartjs-2';
@@ -674,7 +674,7 @@ const Dashboard = () => {
           <div className="dashboard-header-left">
             <h1 className="dashboard-title">Dashboard</h1>
             <div className="greeting-section">
-            <h2 className="greeting-text">
+              <h2 className="greeting-text">
                 Good {timeOfDay}, <span className="user-name">{user?.fullName || user?.name}</span>!
               </h2>
               <p className="current-date">
@@ -708,6 +708,17 @@ const Dashboard = () => {
               >
                 <FaBrain className="ai-icon" />
                 <span>AI Insights</span>
+              </button>
+
+              <button
+                className="ai-insights-btn"
+                onClick={() => navigate('/decision-helper')}
+                title="AI-powered purchase advisor"
+                aria-label="Decision Helper"
+                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: 'white', border: 'none' }}
+              >
+                <FaMagic className="ai-icon" />
+                <span>Decision Helper</span>
               </button>
             </div>
           </div>
