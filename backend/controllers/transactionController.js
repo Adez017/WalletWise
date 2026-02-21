@@ -68,60 +68,45 @@ const addTransaction = async (req, res) => {
             recurringInterval
         } = parsed.data;
 
-        await withTransaction(async (session) => {
-            let nextExecutionDate = null;
+        let nextExecutionDate = null;
 
-            if (isRecurring && recurringInterval) {
-                const now = new Date();
+if (isRecurring && recurringInterval) {
+    const now = new Date();
 
-                if (recurringInterval === "daily") {
-                    now.setDate(now.getDate() + 1);
-                } else if (recurringInterval === "weekly") {
-                    now.setDate(now.getDate() + 7);
-                } else if (recurringInterval === "monthly") {
-                    now.setMonth(now.getMonth() + 1);
-                }
+    if (recurringInterval === "daily") now.setDate(now.getDate() + 1);
+    else if (recurringInterval === "weekly") now.setDate(now.getDate() + 7);
+    else if (recurringInterval === "monthly") now.setMonth(now.getMonth() + 1);
 
-                nextExecutionDate = now;
-            }
+    nextExecutionDate = now;
+}
 
-            const transaction = new Transaction({
-                userId,
-                type,
-                amount,
-                category,
-                description,
-                paymentMethod,
-                mood,
-                ...(date ? { date } : {}),
-                isRecurring,
-                recurringInterval,
-                nextExecutionDate
-            });
+const transaction = new Transaction({
+    userId,
+    type,
+    amount,
+    category,
+    description,
+    paymentMethod,
+    mood,
+    ...(date ? { date } : {}),
+    isRecurring,
+    recurringInterval,
+    nextExecutionDate
+});
 
-            await transaction.save({ session });
+await transaction.save();
 
-            // Update user wallet balance atomically
-            const balanceChange = type === 'income' ? amount : -amount;
-            await User.findByIdAndUpdate(userId, {
-                $inc: { walletBalance: balanceChange }
-            }, { session });
+const balanceChange = type === 'income' ? amount : -amount;
 
-            return res.status(201).json({
-                success: true,
-                message: 'Transaction added successfully',
-                transaction: {
-                    id: transaction._id,
-                    type: transaction.type,
-                    amount: transaction.amount,
-                    category: transaction.category,
-                    description: transaction.description,
-                    date: transaction.date,
-                    paymentMethod: transaction.paymentMethod,
-                    mood: transaction.mood
-                }
-            });
-        });
+await User.findByIdAndUpdate(userId, {
+    $inc: { walletBalance: balanceChange }
+});
+
+return res.status(201).json({
+    success: true,
+    message: 'Transaction added successfully',
+    transaction
+});
 
     } catch (error) {
         console.error('Add transaction error:', error);
@@ -271,6 +256,7 @@ for (const rt of recurringTransactions) {
     }
 };
 
+
 // Update transaction
 const updateTransaction = async (req, res) => {
     try {
@@ -356,49 +342,110 @@ const updateTransaction = async (req, res) => {
     }
 };
 
-// Delete transaction
 const deleteTransaction = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId;
 
         if (!isValidObjectId(id)) {
-            return res.status(400).json({ success: false, message: 'Invalid transaction ID format' });
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid transaction ID format'
+            });
         }
 
-        await withTransaction(async (session) => {
-            const transaction = await Transaction.findOneAndDelete({ _id: id, userId }).session(session);
+        const transaction = await Transaction.findOneAndDelete({
+            _id: id,
+            userId
+        });
 
-            if (!transaction) {
-                const err = new Error('Transaction not found');
-                err.status = 404;
-                throw err;
-            }
-
-            // Revert transaction effect on balance
-            const balanceChange = transaction.type === 'income' ? -transaction.amount : transaction.amount;
-
-            await User.findByIdAndUpdate(userId, {
-                $inc: { walletBalance: balanceChange }
-            }, { session });
-
-            res.json({
-                success: true,
-                message: 'Transaction deleted successfully'
+        if (!transaction) {
+            return res.status(404).json({
+                success: false,
+                message: 'Transaction not found'
             });
+        }
+
+        // revert wallet balance
+        const balanceChange =
+            transaction.type === 'income'
+                ? -transaction.amount
+                : transaction.amount;
+
+        await User.findByIdAndUpdate(userId, {
+            $inc: { walletBalance: balanceChange }
+        });
+
+        res.json({
+            success: true,
+            message: 'Transaction deleted successfully',
+            deletedTransaction: transaction
         });
 
     } catch (error) {
         console.error('Delete transaction error:', error);
-        if (!res.headersSent) {
-            res.status(error.status || 500).json({ success: false, message: error.message || 'Error deleting transaction' });
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting transaction'
+        });
+    }
+};
+
+const undoTransaction = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { deletedTransaction } = req.body;
+
+        if (!deletedTransaction) {
+            return res.status(400).json({
+                success: false,
+                message: 'No transaction data provided for undo'
+            });
         }
+
+        // Restore transaction
+        const restored = new Transaction({
+            userId,
+            type: deletedTransaction.type,
+            amount: deletedTransaction.amount,
+            category: deletedTransaction.category,
+            description: deletedTransaction.description,
+            paymentMethod: deletedTransaction.paymentMethod,
+            mood: deletedTransaction.mood,
+            date: deletedTransaction.date || new Date()
+        });
+
+        await restored.save();
+
+        // Restore wallet balance
+        const balanceChange =
+            restored.type === 'income'
+                ? restored.amount
+                : -restored.amount;
+
+        await User.findByIdAndUpdate(userId, {
+            $inc: { walletBalance: balanceChange }
+        });
+
+        res.json({
+            success: true,
+            message: 'Transaction restored successfully',
+            transaction: restored
+        });
+
+    } catch (error) {
+        console.error('Undo transaction error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
 module.exports = {
-    addTransaction,
-    getAllTransactions,
-    updateTransaction,
-    deleteTransaction
+   addTransaction,
+   getAllTransactions,
+   updateTransaction,
+   deleteTransaction,
+   undoTransaction
 };
