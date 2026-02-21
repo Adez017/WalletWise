@@ -14,8 +14,8 @@ import {
   FaHandHoldingUsd, FaBullseye, FaChartBar, FaExclamationTriangle,
   FaBrain, FaArrowUp, FaArrowDown, FaCalendarAlt,
   FaSync, FaExclamationCircle, FaHome, FaExchangeAlt,
-  FaCog, FaChartPie, FaCreditCard, FaFileAlt, FaBell,
-  FaFilter, FaSearch
+  FaCog, FaChartPie, FaEdit, FaTrash, FaCalendarCheck, FaBell,
+  FaSun, FaMoon, FaMagic, FaCreditCard, FaFileAlt, FaFilter, FaSearch
 } from 'react-icons/fa';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import { toast } from 'react-hot-toast';
@@ -50,6 +50,16 @@ ChartJS.register(
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalBalance: 0,
+    spentThisMonth: 0,
+    incomeThisMonth: 0,
+    budgetLeft: 0,
+    savings: 0,
+    monthlyBudget: 0,
+    budgetUsedPercentage: 0,
+    expenseTrend: 0
+  });
   const [error, setError] = useState(null);
   const [timeOfDay, setTimeOfDay] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -79,6 +89,18 @@ const Dashboard = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Scroll Lock for Mobile Menu
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   // Modal states
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
@@ -86,16 +108,16 @@ const Dashboard = () => {
   const [showSavingsGoalModal, setShowSavingsGoalModal] = useState(false);
 
   // Data states
-  const [stats, setStats] = useState({
-    totalBalance: 0,
-    spentThisMonth: 0,
-    incomeThisMonth: 0,
-    budgetLeft: 0,
-    savings: 0,
-    monthlyBudget: 0,
-    budgetUsedPercentage: 0,
-    expenseTrend: 0
-  });
+  // const [stats, setStats] = useState({
+  //   totalBalance: 0,
+  //   spentThisMonth: 0,
+  //   incomeThisMonth: 0,
+  //   budgetLeft: 0,
+  //   savings: 0,
+  //   monthlyBudget: 0,
+  //   budgetUsedPercentage: 0,
+  //   expenseTrend: 0
+  // });
 
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [categorySpending, setCategorySpending] = useState([]);
@@ -120,10 +142,12 @@ const Dashboard = () => {
           return;
         }
 
-        if (!authUser) {
-          navigate('/login');
-          return;
-        }
+        // if (!authUser) {
+        //   navigate('/login');
+        //   return;
+        // }
+
+
 
         setUser(authUser);
 
@@ -154,6 +178,7 @@ const Dashboard = () => {
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
+    if (refreshing) return; // Prevent multiple simultaneous refreshes
     setRefreshing(true);
     try {
       console.log('???? Fetching dashboard data...');
@@ -176,6 +201,7 @@ const Dashboard = () => {
           budgetUsedPercentage: statsData.budgetUsedPercentage || 0,
           expenseTrend: dashboardData.expenseTrend || 0
         });
+
 
         // Transactions
         setRecentTransactions(dashboardData.recentTransactions || []);
@@ -450,6 +476,14 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="mobile-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        ></div>
+      )}
       {/* Clean, Focused Navbar */}
       <header className="dashboard-header">
         {/* Left: Logo */}
@@ -465,15 +499,19 @@ const Dashboard = () => {
           <button
             className="mobile-menu-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-nav-menu"
           >
             <span className={`hamburger ${isMobileMenuOpen ? 'open' : ''}`}></span>
             <span className={`hamburger ${isMobileMenuOpen ? 'open' : ''}`}></span>
             <span className={`hamburger ${isMobileMenuOpen ? 'open' : ''}`}></span>
           </button>
 
-          <ul className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}>
+          <ul
+            id="mobile-nav-menu"
+            className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -582,12 +620,13 @@ const Dashboard = () => {
               <button
                 className={`refresh-btn ${refreshing ? 'refreshing' : ''}`}
                 onClick={fetchDashboardData}
-                title="Refresh dashboard data"
-                aria-label="Refresh data"
                 disabled={refreshing}
+                aria-busy={refreshing}
+                aria-disabled={refreshing}
+                title={refreshing ? 'Refreshing dashboard...' : 'Refresh dashboard data'}
               >
                 <FaSync className={refreshing ? 'spin' : ''} />
-                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
                 {lastUpdated && !refreshing && (
                   <span className="last-updated">Updated {lastUpdated}</span>
                 )}
@@ -602,12 +641,24 @@ const Dashboard = () => {
                 <FaBrain className="ai-icon" />
                 <span>AI Insights</span>
               </button>
+
+              <button
+                className="ai-insights-btn"
+                onClick={() => navigate('/decision-helper')}
+                title="AI-powered purchase advisor"
+                aria-label="Decision Helper"
+                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: 'white', border: 'none' }}
+              >
+                <FaMagic className="ai-icon" />
+                <span>Decision Helper</span>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="quick-stats">
+        {refreshing && <div className="stats-overlay">Updating...</div>}
+        <div className={`quick-stats ${refreshing ? 'loading' : ''}`}>
           <div className="stat-card">
             <div className="stat-icon blue">
               <FaWallet />
