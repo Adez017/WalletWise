@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
 import './SavingGoal.css';
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const SavingGoal = ({ isOpen, onClose, onGoalCreated }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
   const [timeline, setTimeline] = useState(6); // default 6 months
   const [formData, setFormData] = useState({
     name: '',
@@ -155,7 +157,7 @@ const SavingGoal = ({ isOpen, onClose, onGoalCreated }) => {
 
   const handleOverlayClick = (e) => {
     if (e.target.classList.contains('savings-modal-overlay')) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -175,11 +177,10 @@ const SavingGoal = ({ isOpen, onClose, onGoalCreated }) => {
   };
 
   const handleClose = () => {
-    if (!loading) {
-      resetForm();
-      if (onClose) onClose();
-    }
-  };
+  if (!loading) {
+    setShowConfirm(true);
+  }
+};
 
   // Reset form when modal opens
   useEffect(() => {
@@ -449,6 +450,16 @@ const SavingGoal = ({ isOpen, onClose, onGoalCreated }) => {
           )}
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={showConfirm}
+        message="Are you sure you want to close? Any unsaved changes will be lost."
+        onConfirm={() => {
+          setShowConfirm(false);
+          resetForm();
+          onClose();
+        }}
+        onCancel={() => setShowConfirm(false)}
+        />
     </div>
   );
 };
