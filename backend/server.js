@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
+const AppError = require("./utils/appError");
+const globalErrorHandler = require("./middleware/errorMiddleware");
 const passport = require("passport");
 const helmet = require("helmet");
 const { configurePassport } = require("./config/passport");
@@ -245,16 +247,15 @@ app.get('/', (req, res) => {
     });
 });
 
+// ==================== ERROR HANDLING ====================
+
 // 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Endpoint not found',
-        requestedUrl: req.originalUrl,
-        timestamp: new Date().toISOString()
-    });
+app.all('*', (req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
+// Global Error Middleware
+app.use(globalErrorHandler);
 app.use(errHandler);
 
 
