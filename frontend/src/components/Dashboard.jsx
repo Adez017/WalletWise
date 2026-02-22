@@ -1,48 +1,24 @@
 // src/components/Dashboard.jsx
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import api from "../api/client";
-import { useAuth } from "../context/AuthContext";
-import "./dashboard.css";
-import AddExpense from "../pages/AddExpense";
-import AddIncome from "../pages/AddIncome";
-import SetBudget from "../pages/SetBudget";
-import SavingGoal from "../pages/SavingGoal";
-import { useTheme } from "../context/ThemeContext";
-
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import api from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import './dashboard.css';
+import AddExpense from '../pages/AddExpense';
+import AddIncome from '../pages/AddIncome';
+import SetBudget from '../pages/SetBudget';
+import SavingGoal from '../pages/SavingGoal';
 import {
-  FaWallet,
-  FaSignOutAlt,
-  FaUserCircle,
-  FaChevronDown,
-  FaMoneyBillWave,
-  FaChartLine,
-  FaPiggyBank,
-  FaPlusCircle,
-  FaHandHoldingUsd,
-  FaBullseye,
-  FaChartBar,
-  FaExclamationTriangle,
-  FaBrain,
-  FaArrowUp,
-  FaArrowDown,
-  FaCalendarAlt,
-  FaSync,
-  FaExclamationCircle,
-  FaHome,
-  FaExchangeAlt,
-  FaCog,
-  FaChartPie,
-  FaCreditCard,
-  FaFileAlt,
-  FaBell,
-  FaFilter,
-  FaSearch,
-  FaSun,
-  FaMoon,
-} from "react-icons/fa";
-import { Line, Pie, Bar } from "react-chartjs-2";
-import { toast } from "react-hot-toast";
+  FaWallet, FaSignOutAlt, FaUserCircle, FaChevronDown,
+  FaMoneyBillWave, FaChartLine, FaPiggyBank,
+  FaHandHoldingUsd, FaBullseye, FaChartBar, FaExclamationTriangle,
+  FaBrain, FaArrowUp, FaArrowDown, FaCalendarAlt,
+  FaSync, FaExclamationCircle, FaHome, FaExchangeAlt,
+  FaCog, FaChartPie, FaEdit, FaTrash, FaCalendarCheck, FaBell,
+  FaSun, FaMoon, FaMagic, FaCreditCard, FaFileAlt, FaFilter, FaSearch
+} from 'react-icons/fa';
+import { Line, Pie } from 'react-chartjs-2';
+import { toast } from 'react-hot-toast';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -117,6 +93,18 @@ const Dashboard = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Scroll Lock for Mobile Menu
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   // Modal states
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
@@ -156,53 +144,14 @@ const Dashboard = () => {
     { id: "settings", label: "Settings", icon: FaCog, path: "/settings" },
   ];
 
-  // ============ AUTH & DATA FETCHING ============
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        if (authLoading) {
-          return;
-        }
-
-        // if (!authUser) {
-        //   navigate('/login');
-        //   return;
-        // }
-
-        setUser(authUser);
-
-        // Set time greeting
-        const hour = new Date().getHours();
-        if (hour < 12) setTimeOfDay("Morning");
-        else if (hour < 17) setTimeOfDay("Afternoon");
-        else setTimeOfDay("Evening");
-
-        // Set current date - standardized format
-        const now = new Date();
-        const options = { month: "long", day: "numeric", year: "numeric" };
-        setCurrentDate(now.toLocaleDateString("en-US", options));
-
-        await fetchDashboardData();
-      } catch (err) {
-        console.error("Dashboard initialization error:", err);
-        setError("Failed to initialize dashboard.");
-        setTimeout(() => navigate("/login"), 2000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [navigate, authUser, authLoading]);
-
   // Fetch dashboard data
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (refreshing) return; // Prevent multiple simultaneous refreshes
     setRefreshing(true);
     try {
-      console.log("???? Fetching dashboard data...");
+      console.log('???? Fetching dashboard data...');
 
-      const dashboardRes = await api.get("/api/dashboard/summary");
+      const dashboardRes = await api.get('/api/dashboard/summary');
       const dashboardData = dashboardRes.data;
 
       console.log("📋 Dashboard API Response:", dashboardData);
@@ -258,7 +207,49 @@ const Dashboard = () => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshing, logout, navigate]);
+
+  // ============ AUTH & DATA FETCHING ============
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (authLoading) {
+          return;
+        }
+
+        // if (!authUser) {
+        //   navigate('/login');
+        //   return;
+        // }
+
+
+
+        setUser(authUser);
+
+        // Set time greeting
+        const hour = new Date().getHours();
+        if (hour < 12) setTimeOfDay('Morning');
+        else if (hour < 17) setTimeOfDay('Afternoon');
+        else setTimeOfDay('Evening');
+
+        // Set current date - standardized format
+        const now = new Date();
+        const options = { month: 'long', day: 'numeric', year: 'numeric' };
+        setCurrentDate(now.toLocaleDateString('en-US', options));
+
+        await fetchDashboardData();
+
+      } catch (err) {
+        console.error('Dashboard initialization error:', err);
+        setError('Failed to initialize dashboard.');
+        setTimeout(() => navigate('/login'), 2000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate, authUser, authLoading, fetchDashboardData]);
 
   // ============ HANDLERS ============
   const handleLogout = async () => {
@@ -466,14 +457,6 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-    });
-  };
-
   const formatTransactionDate = (dateString) => {
     if (!dateString) return "";
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -511,6 +494,14 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="mobile-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        ></div>
+      )}
       {/* Clean, Focused Navbar */}
       <header className="dashboard-header">
         {/* Left: Logo */}
@@ -526,8 +517,9 @@ const Dashboard = () => {
           <button
             className="mobile-menu-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-nav-menu"
           >
             <span
               className={`hamburger ${isMobileMenuOpen ? "open" : ""}`}
@@ -540,7 +532,10 @@ const Dashboard = () => {
             ></span>
           </button>
 
-          <ul className={`nav-menu ${isMobileMenuOpen ? "active" : ""}`}>
+          <ul
+            id="mobile-nav-menu"
+            className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -692,6 +687,17 @@ const Dashboard = () => {
               >
                 <FaBrain className="ai-icon" />
                 <span>AI Insights</span>
+              </button>
+
+              <button
+                className="ai-insights-btn"
+                onClick={() => navigate('/decision-helper')}
+                title="AI-powered purchase advisor"
+                aria-label="Decision Helper"
+                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: 'white', border: 'none' }}
+              >
+                <FaMagic className="ai-icon" />
+                <span>Decision Helper</span>
               </button>
             </div>
           </div>
