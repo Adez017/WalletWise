@@ -280,7 +280,9 @@ const getAllTransactions = async (req, res) => {
         }
 
         if (search) {
-            const searchRegex = new RegExp(search, 'i');
+            const { escapeRegex } = require('../utils/helpers');
+            const safeSearch = escapeRegex(search);
+            const searchRegex = new RegExp(safeSearch, 'i');
             query.$or = [
                 { description: searchRegex },
                 { category: searchRegex }
