@@ -258,9 +258,9 @@ app.use(errHandler);
 
 
 // ==================== START SERVER ====================
-// Initialize Scheduler
-const { initScheduler } = require('./utils/scheduler');
-initScheduler();
+// Initialize Worker
+const { initWorker } = require('./worker');
+initWorker();
 
 const PORT = process.env.PORT || 5000;
 
